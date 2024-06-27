@@ -11,24 +11,25 @@ module I = struct
 end
 
 module O = struct
-  type 'a t = {
-    alu_res : 'a; [@bits 32]
-  }
-  [@@deriving hardcaml]
+  type 'a t = { alu_res : 'a [@bits 32] } [@@deriving hardcaml]
 end
 
 let create (_scope : Scope.t) (i : _ I.t) =
-  let O.({ alu_res } as out) = O.Of_always.wire zero in 
+  let O.({ alu_res } as out) = O.Of_always.wire zero in
 
-  Always.(compile [
-    switch i.alu_ctrl [
-      of_bit_string "000", [ alu_res <-- (i.src_a +: i.src_b )];
-      of_bit_string "001", [ alu_res <-- (i.src_a -: i.src_b) ];
-      of_bit_string "010", [ alu_res <-- (i.src_a &: i.src_b) ];
-      of_bit_string "011", [ alu_res <-- (i.src_a |: i.src_b) ];
-      of_bit_string "101", [ alu_res <-- (zero 31 @: (i.src_a <: i.src_b)) ];
-    ]
-  ]);
+  Always.(
+    compile
+      [
+        switch i.alu_ctrl
+          [
+            (of_bit_string "000", [ alu_res <-- i.src_a +: i.src_b ]);
+            (of_bit_string "001", [ alu_res <-- i.src_a -: i.src_b ]);
+            (of_bit_string "010", [ alu_res <-- (i.src_a &: i.src_b) ]);
+            (of_bit_string "011", [ alu_res <-- (i.src_a |: i.src_b) ]);
+            ( of_bit_string "101",
+              [ alu_res <-- zero 31 @: (i.src_a <: i.src_b) ] );
+          ];
+      ]);
 
   O.Of_always.value out
 

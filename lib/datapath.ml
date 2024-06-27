@@ -12,6 +12,11 @@ let create (scope : Scope.t) (i : _ I.t) =
   let memory_wr_enable = wire 1 in
   let immsrc = wire 2 in
   let regfile_wr_enable = wire 1 in
+  let addr_src = wire 1 in
+  let result_src = wire 2 in
+
+  let addr_wire = wire 32 in
+  let result_wire = wire 32 in
 
   let spec = Reg_spec.create ~clock:i.clock ~clear:i.clear () in
   let pc_reg = reg spec ~enable:pc_enable pc_next in
@@ -20,19 +25,20 @@ let create (scope : Scope.t) (i : _ I.t) =
     Memory.I.
       {
         clock = i.clock;
-        enable = Signal.gnd;
-        addr = Signal.zero 9;
-        wr_data = Signal.zero 32;
+        enable = memory_wr_enable;
+        addr = addr_wire;
+        wr_data = result_wire;
       }
   in
 
   let Memory.O.{ rd_data } = Memory.hierarchical scope memory_input in
 
   let ir_reg = reg spec ~enable:instr_reg_enable rd_data in
+  let data_reg = reg spec rd_data in
 
   let rs1_addr = ir_reg.:[19, 15] in
 
-  let Extend.O.{ immext } =
+  let extender =
     Extend.hierarchical scope Extend.I.{ instr = ir_reg; src = immsrc }
   in
 
@@ -49,12 +55,17 @@ let create (scope : Scope.t) (i : _ I.t) =
   in
   let regfile = Regfile.hierarchical scope regfile_input in
 
-  let a_reg = reg spec ~enable:Signal.vdd regfile.rs1 in
+  let a_reg = reg spec regfile.rs1 in
 
-  let alu = Alu.hierarchical scope Alu.I.{
-    src_a = a_reg;
-    src_b = zero 32;
-    alu_ctrl = zero 3;
-  } in
+  let alu =
+    Alu.hierarchical scope
+      Alu.I.{ src_a = a_reg; src_b = extender.immext; alu_ctrl = zero 3 }
+  in
 
-  ignore (pc_reg, instr_reg_enable, memory_wr_enable, memory, immext, alu)
+  let alu_out_reg = reg spec alu.alu_res in
+
+  result_wire <== mux result_src [ alu_out_reg; data_reg; zero 32 ];
+
+  addr_wire <== mux2 addr_src pc_reg result_wire;
+
+  ignore memory
