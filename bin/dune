@@ -1,4 +1,4 @@
 (executable
  (public_name risc_v)
  (name main)
- (libraries risc_v))
+ (libraries risc_v hardcaml hardcaml_waveterm))

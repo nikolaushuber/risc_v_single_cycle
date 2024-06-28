@@ -11,11 +11,11 @@ module I = struct
 end
 
 module O = struct
-  type 'a t = { alu_res : 'a [@bits 32] } [@@deriving hardcaml]
+  type 'a t = { alu_res : 'a; [@bits 32] zero_ : 'a } [@@deriving hardcaml]
 end
 
 let create (_scope : Scope.t) (i : _ I.t) =
-  let O.({ alu_res } as out) = O.Of_always.wire zero in
+  let O.({ alu_res; zero_ } as out) = O.Of_always.wire zero in
 
   Always.(
     compile
@@ -29,6 +29,7 @@ let create (_scope : Scope.t) (i : _ I.t) =
             ( of_bit_string "101",
               [ alu_res <-- zero 31 @: (i.src_a <: i.src_b) ] );
           ];
+        zero_ <-- (alu_res.value ==:. 0);
       ]);
 
   O.Of_always.value out

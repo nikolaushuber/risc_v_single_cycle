@@ -31,8 +31,8 @@ let create (_scope : Scope.t) (i : _ I.t) =
     multiport_memory 31 ~write_ports:[| wr_port |]
       ~read_addresses:[| i.rs1_addr; i.rs2_addr |]
   in
-  let rs1 = mux2 (i.rs1_addr ==: Signal.zero 5) (Signal.zero 32) regfile.(0) in
-  let rs2 = mux2 (i.rs2_addr ==: Signal.zero 5) (Signal.zero 32) regfile.(1) in
+  let rs1 = mux2 (i.rs1_addr ==: Signal.zero 5) (Signal.zero 32) regfile.(0) -- "rs1" in
+  let rs2 = mux2 (i.rs2_addr ==: Signal.zero 5) (Signal.zero 32) regfile.(1) -- "rs2" in
   O.{ rs1; rs2 }
 
 let hierarchical scope input =

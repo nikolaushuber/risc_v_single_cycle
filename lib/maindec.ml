@@ -70,3 +70,7 @@ let create (_scope : Scope.t) (i : _ I.t) =
       ]);
 
   O.Of_always.value out
+
+let hierarchical scope input =
+  let module H = Hierarchy.In_scope (I) (O) in
+  H.hierarchical ~scope ~name:"maindec" create input
